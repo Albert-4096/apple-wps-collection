@@ -49,6 +49,10 @@ func openDB(path string) (*store, error) {
 			attempts INTEGER NOT NULL DEFAULT 0
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_frontier_pending ON frontier(processed) WHERE processed = 0;`,
+		`CREATE TABLE IF NOT EXISTS settings (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL
+		);`,
 	}
 	for _, stmt := range schema {
 		if _, err := d.Exec(stmt); err != nil {
@@ -226,4 +230,56 @@ func (s *store) apCount() (int, error) {
 	var n int
 	err := s.db.QueryRow("SELECT COUNT(*) FROM access_points").Scan(&n)
 	return n, err
+}
+
+// getSetting returns the stored value for key, or def if unset.
+func (s *store) getSetting(key, def string) (string, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	var v string
+	err := s.db.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&v)
+	if err == sql.ErrNoRows {
+		return def, nil
+	}
+	if err != nil {
+		return def, err
+	}
+	return v, nil
+}
+
+// setSetting upserts a key/value pair.
+func (s *store) setSetting(key, value string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	_, err := s.db.Exec(
+		`INSERT INTO settings (key, value) VALUES (?, ?)
+		 ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+		key, value,
+	)
+	return err
+}
+
+// recentAPs returns the most recently discovered access points, newest first,
+// with BSSIDs decoded back to colon-hex strings for the UI.
+func (s *store) recentAPs(limit int) ([]lib.AP, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	rows, err := s.db.Query(
+		"SELECT bssid, lat, lon FROM access_points ORDER BY discovered_at DESC, bssid DESC LIMIT ?",
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []lib.AP
+	for rows.Next() {
+		var id int64
+		var lat, lon float64
+		if err := rows.Scan(&id, &lat, &lon); err != nil {
+			return nil, err
+		}
+		out = append(out, lib.AP{BSSID: mac.Decode(id), Location: lib.Location{Lat: lat, Long: lon}})
+	}
+	return out, rows.Err()
 }

@@ -243,3 +243,41 @@ func TestAddAPsSkipsInvalidBSSID(t *testing.T) {
 		t.Fatalf("apCount = %d, want 1 (invalid skipped)", n)
 	}
 }
+
+func TestSettingsRoundTrip(t *testing.T) {
+	s := newTestStore(t)
+	if v, _ := s.getSetting("workers", "15"); v != "15" {
+		t.Fatalf("default getSetting = %q, want 15", v)
+	}
+	if err := s.setSetting("workers", "42"); err != nil {
+		t.Fatal(err)
+	}
+	v, err := s.getSetting("workers", "15")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v != "42" {
+		t.Fatalf("getSetting = %q, want 42", v)
+	}
+}
+
+func TestRecentAPs(t *testing.T) {
+	s := newTestStore(t)
+	aps := []lib.AP{
+		{BSSID: "aa:bb:cc:dd:ee:01", Location: lib.Location{Lat: 1, Long: 2}},
+		{BSSID: "aa:bb:cc:dd:ee:02", Location: lib.Location{Lat: 3, Long: 4}},
+	}
+	if err := s.addAPs(aps); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.recentAPs(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("recentAPs = %d, want 2", len(got))
+	}
+	if got[0].BSSID == "" {
+		t.Fatal("recentAPs returned empty BSSID")
+	}
+}
