@@ -24,7 +24,7 @@ services:
     # add `-token ${SNOWBALL_TOKEN}` to expose it more widely.
     command: ["-db", "/data/snowball.db", "-listen", ":1648"]
     volumes:
-      - ./data:/data
+      - ./snowball.db:/data/snowball.db
     # Host resource caps so the crawler is a good neighbour. The workload is
     # network-I/O-bound, so CPU is mostly a guardrail; tune to taste.
     deploy:
@@ -39,7 +39,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "127.0.0.1:16492:16492"
+      - "16492:16492"
     volumes:
       - "./nginx.conf:/etc/nginx/conf.d/default.conf:ro"
     depends_on: [snowball]
