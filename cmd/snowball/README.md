@@ -46,6 +46,26 @@ Optional flags (all have sensible defaults):
 | `-max-attempts` | `5` | give up on a BSSID after this many non-rate-limit failures |
 | `-stats-interval` | `30s` | how often to log progress |
 
+## Live dashboard
+
+The service serves a real-time web dashboard from the same binary. By default it
+binds `127.0.0.1:8080` (localhost only). Open `http://127.0.0.1:8080` to watch
+captured access points light up a dark world map, see live stats (total APs,
+captures/s, pending, in-flight, throttle state), and adjust the worker count on
+the fly with the Workers slider — the chosen value persists across restarts.
+
+Extra flags:
+
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `-listen` | `127.0.0.1:8080` | dashboard listen address (use `:8080` to bind all interfaces) |
+| `-max-workers` | `200` | hard ceiling the Workers slider can reach |
+| `-token` | _(empty)_ | shared secret required on the dashboard/WebSocket when set |
+
+Because the dashboard can change crawler behaviour, it binds localhost by
+default. To reach it from another machine, set `-listen :8080` and a `-token`,
+then connect to `http://host:8080/?token=YOURTOKEN`.
+
 Apple rate-limits with HTTP 503; the service applies shared exponential backoff
 (1s → 5m, with jitter) so the whole pool slows together and recovers
 automatically. `Ctrl-C` / `SIGTERM` shuts down gracefully, finishing in-flight
@@ -65,6 +85,7 @@ Run it with a named volume so the SQLite database survives restarts:
 
 ```sh
 docker run -d --name snowball --restart unless-stopped \
+  -p 127.0.0.1:8080:8080 \
   -v snowball-data:/data snowball
 docker logs -f snowball        # follow the stats output
 ```

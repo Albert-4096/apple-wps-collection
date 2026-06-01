@@ -27,6 +27,7 @@ COPY --from=build /snowball /usr/local/bin/snowball
 RUN mkdir -p /data && chown snowball /data
 VOLUME /data
 WORKDIR /data
+EXPOSE 8080
 USER snowball
 
 ENTRYPOINT ["snowball"]

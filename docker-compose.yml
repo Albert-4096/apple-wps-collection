@@ -19,5 +19,20 @@ services:
     # Run as the host user so the bind-mounted ./data is writable and the DB
     # files stay owned by you. Change if your uid:gid differs from 1000:1000.
     user: "1000:1000"
+    # Inside the container bind the dashboard on all interfaces; on the host it
+    # is published to localhost only (see ports below). Set SNOWBALL_TOKEN and
+    # add `-token ${SNOWBALL_TOKEN}` to expose it more widely.
+    command: ["-db", "/data/snowball.db", "-listen", ":8080"]
+    ports:
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./data:/data
+    # Host resource caps so the crawler is a good neighbour. The workload is
+    # network-I/O-bound, so CPU is mostly a guardrail; tune to taste.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+        reservations:
+          memory: 64M
