@@ -1,0 +1,23 @@
+# Snowball Wi-Fi access-point collector.
+#
+#   docker compose up -d --build      # build image and start (detached)
+#   docker compose logs -f            # follow the stats output
+#   docker compose down               # stop (the ./data DB is kept)
+#
+# The SQLite database is bind-mounted from ./data so it survives restarts and
+# is easy to back up. Seed it by placing your snowball.db at ./data/snowball.db
+# before the first `up`; otherwise the crawler starts empty and self-seeds.
+
+services:
+  snowball:
+    build:
+      context: .
+      dockerfile: cmd/snowball/Dockerfile
+    image: snowball
+    container_name: snowball
+    restart: unless-stopped
+    # Run as the host user so the bind-mounted ./data is writable and the DB
+    # files stay owned by you. Change if your uid:gid differs from 1000:1000.
+    user: "1000:1000"
+    volumes:
+      - ./data:/data

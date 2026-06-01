@@ -1,0 +1,22 @@
+# Keep the build context small. Docker matches `*` within a single path
+# segment only, so nested paths need a `**/` prefix to be excluded.
+
+# SQLite databases (runtime/collected data — never needed to build).
+**/*.db
+**/*.db-wal
+**/*.db-shm
+
+# Python virtualenvs and bytecode.
+**/venv/
+**/__pycache__/
+**/*.pyc
+
+# Node / frontend build artifacts.
+**/node_modules/
+
+# Prebuilt binary at the repo root.
+/snowball
+
+# VCS and editor cruft.
+.git/
+.gitignore
