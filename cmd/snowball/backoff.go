@@ -39,6 +39,21 @@ func (b *backoff) reset() {
 	b.mu.Unlock()
 }
 
+// snapshot reports the current throttle state without mutating it: whether the
+// pool is currently backing off, and the delay that the next pause would use.
+func (b *backoff) snapshot() (throttled bool, delay time.Duration) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.attempt == 0 {
+		return false, 0
+	}
+	d := b.base << (b.attempt - 1)
+	if d <= 0 || d > b.max {
+		d = b.max
+	}
+	return true, d
+}
+
 // pause sleeps for d plus a little jitter, returning early if ctx is cancelled.
 // Returns false if the context was cancelled during the wait.
 func (b *backoff) pause(ctx context.Context, d time.Duration) bool {

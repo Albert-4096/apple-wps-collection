@@ -26,3 +26,22 @@ func TestBackoffResetsOnSuccess(t *testing.T) {
 		t.Fatalf("after reset, fail() = %v, want 1s", got)
 	}
 }
+
+func TestBackoffSnapshot(t *testing.T) {
+	b := newBackoff(time.Second, 4*time.Second)
+	if th, _ := b.snapshot(); th {
+		t.Fatal("fresh backoff should not report throttled")
+	}
+	b.fail()
+	th, d := b.snapshot()
+	if !th {
+		t.Fatal("should report throttled after a failure")
+	}
+	if d != time.Second {
+		t.Fatalf("delay = %v, want 1s", d)
+	}
+	b.reset()
+	if th, _ := b.snapshot(); th {
+		t.Fatal("reset should clear throttled state")
+	}
+}
