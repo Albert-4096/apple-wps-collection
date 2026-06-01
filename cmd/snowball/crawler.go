@@ -16,6 +16,7 @@ type crawler struct {
 	query       queryFunc
 	opts        []lib.Modifier
 	maxAttempts int
+	onCapture   func([]lib.AP) // optional; called with each batch of discovered APs
 }
 
 // handle queries one BSSID and folds the results back into the store. On
@@ -56,6 +57,9 @@ func (c *crawler) handle(ctx context.Context, bssid string) {
 		c.backoff.reset()
 		if err := c.store.addAPs(aps); err != nil {
 			log.Printf("addAPs: %v", err)
+		}
+		if c.onCapture != nil {
+			c.onCapture(aps)
 		}
 		next := make([]string, len(aps))
 		for i, ap := range aps {

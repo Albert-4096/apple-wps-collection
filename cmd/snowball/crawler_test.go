@@ -108,3 +108,21 @@ func TestHandleStopsOnContextCancel(t *testing.T) {
 		t.Fatal("handle did not return on cancelled context")
 	}
 }
+
+func TestHandleEmitsCaptureEvent(t *testing.T) {
+	q := func([]string, int32, ...lib.Modifier) ([]lib.AP, error) {
+		return []lib.AP{{BSSID: "aa:bb:cc:dd:ee:01", Location: lib.Location{Lat: 1, Long: 2}}}, nil
+	}
+	c := newTestCrawler(t, q)
+	var got []lib.AP
+	c.onCapture = func(aps []lib.AP) { got = aps }
+	if err := c.store.enqueue([]string{"aa:bb:cc:dd:ee:00"}); err != nil {
+		t.Fatal(err)
+	}
+
+	c.handle(context.Background(), "aa:bb:cc:dd:ee:00")
+
+	if len(got) != 1 {
+		t.Fatalf("onCapture received %d aps, want 1", len(got))
+	}
+}
