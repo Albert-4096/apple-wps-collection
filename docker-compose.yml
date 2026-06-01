@@ -22,7 +22,7 @@ services:
     # Inside the container bind the dashboard on all interfaces; on the host it
     # is published to localhost only (see ports below). Set SNOWBALL_TOKEN and
     # add `-token ${SNOWBALL_TOKEN}` to expose it more widely.
-    command: ["-db", "./snowball.db", "-listen", ":1648"]
+    command: ["-db", "/data/snowball.db", "-listen", ":1648"]
     volumes:
       - ./data:/data
     # Host resource caps so the crawler is a good neighbour. The workload is
