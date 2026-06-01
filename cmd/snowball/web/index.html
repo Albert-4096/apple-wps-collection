@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>snowball — live</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.30/dist/uPlot.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="map" aria-label="Map of captured access points"></div>
+
+  <header id="topbar">
+    <div class="brand">
+      <span class="dot"></span> snowball
+    </div>
+    <div class="tiles">
+      <div class="tile"><span class="label">Access points</span><span class="value" id="m-aps">0</span></div>
+      <div class="tile">
+        <span class="label">Captures/s</span>
+        <span class="value" id="m-rate">0.0</span>
+        <div id="spark"></div>
+      </div>
+      <div class="tile"><span class="label">Pending</span><span class="value" id="m-pending">0</span></div>
+      <div class="tile"><span class="label">In-flight</span><span class="value" id="m-inflight">0</span></div>
+    </div>
+    <div class="status" id="status" role="status">
+      <span class="status-dot"></span><span id="status-text">CONNECTING</span>
+    </div>
+  </header>
+
+  <aside id="panel">
+    <section class="control">
+      <label for="workers">Workers <span id="workers-val">0</span> / <span id="workers-max">0</span></label>
+      <input type="range" id="workers" min="0" max="0" value="0" step="1" />
+      <p class="hint">Active: <span id="workers-active">0</span></p>
+    </section>
+    <section class="feed">
+      <h2>Live captures</h2>
+      <ul id="feed"></ul>
+    </section>
+  </aside>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="https://unpkg.com/uplot@1.6.30/dist/uPlot.iife.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
