@@ -114,3 +114,27 @@ func TestServerTokenRequired(t *testing.T) {
 	}
 	c.Close()
 }
+
+func TestServerDisconnectUnsubscribes(t *testing.T) {
+	s := testServer(t, "")
+	ts := httptest.NewServer(s.handler())
+	defer ts.Close()
+	c, _, err := websocket.DefaultDialer.Dial(wsURL(ts.URL)+"/ws", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := c.ReadMessage(); err != nil { // snapshot
+		t.Fatal(err)
+	}
+	// No broadcasts happen on this hub. Closing the client must still tear down
+	// the subscription (writer must not stay blocked on sub.ch forever).
+	c.Close()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if s.hub.count() == 0 {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("hub.count() = %d after disconnect, want 0", s.hub.count())
+}

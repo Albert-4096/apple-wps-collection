@@ -71,12 +71,15 @@ func (s *server) handleWS(c echo.Context) error {
 		_ = conn.WriteMessage(websocket.TextMessage, snap)
 	}
 
-	// Reader: handle control messages; closing conn unblocks the writer.
+	// Reader: handle control messages. It closes done on exit so the writer
+	// tears down promptly when the client disconnects (closing the conn does
+	// not by itself unblock the writer's channel receive).
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		for {
 			_, data, err := conn.ReadMessage()
 			if err != nil {
-				conn.Close()
 				return
 			}
 			var ctl struct {
@@ -89,12 +92,20 @@ func (s *server) handleWS(c echo.Context) error {
 		}
 	}()
 
-	// Writer: pump hub messages to the client until the channel closes (slow
-	// client dropped) or the write fails (client gone).
-	for msg := range sub.ch {
-		if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+	// Writer: pump hub messages until the client disconnects (done closed by
+	// the reader), the hub drops a slow client (sub.ch closed), or a write
+	// fails. The deferred conn.Close above then unblocks the reader.
+	for {
+		select {
+		case <-done:
 			return nil
+		case msg, ok := <-sub.ch:
+			if !ok {
+				return nil
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+				return nil
+			}
 		}
 	}
-	return nil
 }
